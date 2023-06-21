@@ -8,30 +8,10 @@ import './scss/TodoTemplate.scss';
 const TodoTemplate = () => {
 
   // 서버에 할일 목록(json)을 요청(fetch)해서 받아와야 함.
+  const API_BASE_URL = 'http://localhost:8181/api/todos';
 
   //todos 배열을 상태 관리
-  const [todos, setTodos] = useState([
-    {
-      id: 1,
-      title: '아침 산책하기',
-      done: true
-    },
-    {
-      id: 2,
-      title: '헬스하기',
-      done: true
-    },
-    {
-      id: 3,
-      title: '수업 듣다 졸기',
-      done: false
-    },
-    {
-      id: 4,
-      title: '수업째기',
-      done: true
-    }
-  ]);
+  const [todos, setTodos] = useState([]);
 
   // id값 시퀀스 생성 함수
   const makeNewId= () => {
@@ -48,9 +28,7 @@ const TodoTemplate = () => {
     // console.log('할 일 정보: ', todoText);
 
     const newTodo = {
-      id: makeNewId(),
-      title: todoText,
-      done: false
+      title: todoText
     };
 
     // todos.push(newTodo);
@@ -65,6 +43,16 @@ const TodoTemplate = () => {
 
     // setTodos(todos.concat([newTodo]));
 
+    fetch(API_BASE_URL, {
+      method : 'POST',
+      headers : { 'content-type' : 'application/json' },
+      body: JSON.stringify(newTodo)
+    })
+    .then(res => res.json)
+    .then(json => {
+      setTodos(json.todos);
+    });
+
     setTodos([...todos, newTodo]);
   }
 
@@ -74,11 +62,19 @@ const TodoTemplate = () => {
 
     //주어진 배열의 값들을 순회하여 조건에 맞는 요소들만 모아서
     //새로운 배열로 리턴해 주는 함수.
-    setTodos(todos.filter(todo => todo.id !== id));
+    
+    fetch(`${API_BASE_URL}/${id}`, {
+      method: 'DELETE'
+    })
+    .then(res => res.json())
+    .then(json => {
+      setTodos(json.todos);
+    });
+
   };
 
   // 할 일 체크 처리 함수
-  const checkTodo = id => {
+  const checkTodo = (id, done) => {
     // console.log(`체크한 Todo id: ${id}`);
 
     // const copyTodos = [...todos];
@@ -90,7 +86,16 @@ const TodoTemplate = () => {
 
     // setTodos(copyTodos);
 
-    setTodos(todos.map(todo => todo.id === id ? {...todo, done: !todo.done} : todo));
+    fetch(API_BASE_URL, {
+      method : 'PUT',
+      headers : { 'content-type' : 'application/json' },
+      body: JSON.stringify({
+        id: id,
+        done: !done
+      })
+    })
+    .then(res => res.json())
+    .then(json => setTodos(json.todos));
     
   }
 
@@ -98,8 +103,18 @@ const TodoTemplate = () => {
   const countRestTodo = () => todos.filter(todo => !todo.done).length;
 
   useEffect(() => {
-    console.log(todos);
-  }, [todos]);
+    
+    //페이지가 렌더링 됨과 동시에 할 일 목록을 요청해서 뿌려 주겠습니다.
+    fetch(API_BASE_URL)
+    .then(res => res.json())
+    .then(json => {
+      console.log(json.todos);
+
+      //fetch를 통해 받아온 데이터를 상태 변수에 할당.
+      setTodos(json.todos);
+    });
+
+  }, []);
 
   return (
     <div className='TodoTemplate'>
