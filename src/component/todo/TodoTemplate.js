@@ -52,8 +52,6 @@ const TodoTemplate = () => {
     .then(json => {
       setTodos(json.todos);
     });
-
-    setTodos([...todos, newTodo]);
   }
 
   // 할 일 삭제 처리 함수
